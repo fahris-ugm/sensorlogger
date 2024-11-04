@@ -16,19 +16,20 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SensorLogger"
         tools:targetApi="31">
-        <activity
-            android:name=".ui.logger.LocationDetailActivity"
-            android:exported="false" />
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${GOOGLE_MAPS_API_KEY}" />
-
+        <activity
+            android:name=".ui.logger.LocationDetailActivity"
+            android:screenOrientation="portrait"
+            android:exported="false" />
         <activity
             android:name=".ui.logger.SensorDetailActivity"
+            android:screenOrientation="portrait"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>

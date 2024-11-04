@@ -32,6 +32,9 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
     private val zEntries = mutableListOf<Entry>()
     private var timestamp = 0f
 
+    private val gravity = FloatArray(3)
+    private val linearAcceleration = FloatArray(3)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -76,7 +79,23 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
             val xValue = timestamp  // Use timestamp as x-axis for real-time update
-            if (sensorType == SensorItem.TYPE_ACCELEROMETER || sensorType == SensorItem.TYPE_GYROSCOPE) {
+            if (sensorType == SensorItem.TYPE_ACCELEROMETER) {
+                // Apply a low-pass filter to isolate the gravity component
+                val alpha = 0.8f
+
+                gravity[0] = alpha * gravity[0] + (1 - alpha) * it.values[0]
+                gravity[1] = alpha * gravity[1] + (1 - alpha) * it.values[1]
+                gravity[2] = alpha * gravity[2] + (1 - alpha) * it.values[2]
+
+                // Calculate linear acceleration (excluding gravity)
+                linearAcceleration[0] = it.values[0] - gravity[0]
+                linearAcceleration[1] = it.values[1] - gravity[1]
+                linearAcceleration[2] = it.values[2] - gravity[2]
+                valueTextView.text = "X: ${linearAcceleration[0]} \nY: ${linearAcceleration[1]} \nZ: ${linearAcceleration[2]}"
+                xEntries.add(Entry(xValue, linearAcceleration[0]))
+                yEntries.add(Entry(xValue, linearAcceleration[1]))
+                zEntries.add(Entry(xValue, linearAcceleration[2]))
+            } else if (sensorType == SensorItem.TYPE_GYROSCOPE) {
                 val xAxisValue = it.values[0]  // Use the first axis value, adjust if needed
                 val yAxisValue = it.values[1]  // Use the second axis value, adjust if needed
                 val zAxisValue = it.values[2]  // Use the third axis value, adjust if needed
