@@ -10,14 +10,14 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.recyclerview.widget.RecyclerView
 import id.ac.ugm.fahris.sensorlogger.R
 
-import id.ac.ugm.fahris.sensorlogger.data.Sensor
+import id.ac.ugm.fahris.sensorlogger.data.SensorItem
 
-class SensorListAdapter(private val sensors: List<Sensor>, private val listener: OnSensorClickListener) :
+class SensorListAdapter(private val sensorItems: List<SensorItem>, private val listener: OnSensorClickListener) :
     RecyclerView.Adapter<SensorListAdapter.SensorViewHolder>() {
 
     interface OnSensorClickListener {
-        fun onSensorToggle(sensor: Sensor, isChecked: Boolean)
-        fun onSensorDetailsClick(sensor: Sensor)
+        fun onSensorToggle(sensorItem: SensorItem, isChecked: Boolean)
+        fun onSensorDetailsClick(sensorItem: SensorItem)
     }
 
     class SensorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -33,7 +33,7 @@ class SensorListAdapter(private val sensors: List<Sensor>, private val listener:
     }
 
     override fun onBindViewHolder(holder: SensorViewHolder, position: Int) {
-        val sensor = sensors[position]
+        val sensor = sensorItems[position]
         holder.sensorNameTextView.text = sensor.name
         Log.d("SensorListAdapter", "Binding sensor: ${sensor.name}")
         holder.sensorToggle.setOnCheckedChangeListener(null) // Remove previous listener
@@ -49,6 +49,6 @@ class SensorListAdapter(private val sensors: List<Sensor>, private val listener:
     }
 
     override fun getItemCount(): Int {
-        return sensors.size
+        return sensorItems.size
     }
 }

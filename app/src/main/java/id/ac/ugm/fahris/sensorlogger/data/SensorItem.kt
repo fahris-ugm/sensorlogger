@@ -1,6 +1,6 @@
 package id.ac.ugm.fahris.sensorlogger.data
 
-data class Sensor(
+data class SensorItem(
     val name: String,
     val type: Int, // Use Sensor.TYPE_ constants or -1 for custom types like Location
     var isRecording: Boolean = false // Add isRecording property

@@ -1,12 +1,13 @@
 package id.ac.ugm.fahris.sensorlogger.ui.logger
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import id.ac.ugm.fahris.sensorlogger.data.Sensor
+import id.ac.ugm.fahris.sensorlogger.data.SensorItem
 import id.ac.ugm.fahris.sensorlogger.databinding.FragmentLoggerBinding
 
 class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener {
@@ -29,15 +30,15 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener {
         val root: View = binding.root
 
         // Initialize sensor list
-        val sensors = listOf(
-            Sensor("Accelerometer", Sensor.TYPE_ACCELEROMETER),
-            Sensor("Gyroscope", Sensor.TYPE_GYROSCOPE),
-            Sensor("Light", Sensor.TYPE_LIGHT),
-            Sensor("Location", Sensor.TYPE_LOCATION)
+        val sensorItems = listOf(
+            SensorItem("Accelerometer", SensorItem.TYPE_ACCELEROMETER),
+            SensorItem("Gyroscope", SensorItem.TYPE_GYROSCOPE),
+            SensorItem("Light", SensorItem.TYPE_LIGHT),
+            SensorItem("Location", SensorItem.TYPE_LOCATION)
         )
 
         // Initialize SensorListAdapter
-        sensorListAdapter = SensorListAdapter(sensors, this) // 'this' implements OnSensorClickListener
+        sensorListAdapter = SensorListAdapter(sensorItems, this) // 'this' implements OnSensorClickListener
         val sensorRecyclerView = binding.sensorRecyclerView
         sensorRecyclerView.adapter = sensorListAdapter
 
@@ -49,12 +50,15 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener {
         _binding = null
     }
 
-    override fun onSensorToggle(sensor: Sensor, isChecked: Boolean) {
+    override fun onSensorToggle(sensorItem: SensorItem, isChecked: Boolean) {
 
-        Log.d("LoggerFragment", "onSensorToggle: $sensor, $isChecked")
+        Log.d("LoggerFragment", "onSensorToggle: $sensorItem, $isChecked")
     }
 
-    override fun onSensorDetailsClick(sensor: Sensor) {
-        Log.d("LoggerFragment", "onSensorDetailsClick: $sensor")
+    override fun onSensorDetailsClick(sensorItem: SensorItem) {
+        Log.d("LoggerFragment", "onSensorDetailsClick: $sensorItem")
+        val intent = Intent(context, SensorDetailActivity::class.java)
+        intent.putExtra("sensor_name", sensorItem.name)
+        startActivity(intent)
     }
 }
