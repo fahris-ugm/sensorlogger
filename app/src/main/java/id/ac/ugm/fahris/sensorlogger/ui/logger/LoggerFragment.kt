@@ -57,9 +57,16 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener {
 
     override fun onSensorDetailsClick(sensorItem: SensorItem) {
         Log.d("LoggerFragment", "onSensorDetailsClick: $sensorItem")
-        val intent = Intent(context, SensorDetailActivity::class.java)
-        intent.putExtra("sensor_name", sensorItem.name)
-        intent.putExtra("sensor_type", sensorItem.type)
-        startActivity(intent)
+        if (sensorItem.type == SensorItem.TYPE_LOCATION) {
+            val intent = Intent(context, LocationDetailActivity::class.java)
+            intent.putExtra("sensor_name", sensorItem.name)
+            intent.putExtra("sensor_type", sensorItem.type)
+            startActivity(intent)
+        } else {
+            val intent = Intent(context, SensorDetailActivity::class.java)
+            intent.putExtra("sensor_name", sensorItem.name)
+            intent.putExtra("sensor_type", sensorItem.type)
+            startActivity(intent)
+        }
     }
 }
