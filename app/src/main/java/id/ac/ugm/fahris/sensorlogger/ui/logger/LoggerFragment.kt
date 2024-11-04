@@ -59,6 +59,7 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener {
         Log.d("LoggerFragment", "onSensorDetailsClick: $sensorItem")
         val intent = Intent(context, SensorDetailActivity::class.java)
         intent.putExtra("sensor_name", sensorItem.name)
+        intent.putExtra("sensor_type", sensorItem.type)
         startActivity(intent)
     }
 }

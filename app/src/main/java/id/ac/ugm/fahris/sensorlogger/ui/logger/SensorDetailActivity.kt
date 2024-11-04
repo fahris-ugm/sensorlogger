@@ -17,15 +17,15 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import id.ac.ugm.fahris.sensorlogger.R
+import id.ac.ugm.fahris.sensorlogger.data.SensorItem
 
 class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var lineChart: LineChart
     private lateinit var sensorManager: SensorManager
     private var sensor: Sensor? = null
+    private var sensorType = -1
 
-    private lateinit var xValueTextView: TextView
-    private lateinit var yValueTextView: TextView
-    private lateinit var zValueTextView: TextView
+    private lateinit var valueTextView: TextView
 
     private val xEntries = mutableListOf<Entry>()
     private val yEntries = mutableListOf<Entry>()
@@ -42,11 +42,15 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
             insets
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        intent.getStringExtra("sensor_name")?.let {
+            supportActionBar?.title = it
+        }
+        intent.getIntExtra("sensor_type", -1).let {
+            sensorType = it
+        }
 
         // Initialize TextViews for real-time values
-        xValueTextView = findViewById(R.id.xValueTextView)
-        yValueTextView = findViewById(R.id.yValueTextView)
-        zValueTextView = findViewById(R.id.zValueTextView)
+        valueTextView = findViewById(R.id.valueTextView)
 
         // Initialize the LineChart
         lineChart = findViewById(R.id.lineChart)
@@ -55,7 +59,13 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
 
         // Initialize SensorManager and select the sensor (e.g., Accelerometer)
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)  // Change as needed
+        if (sensorType == SensorItem.TYPE_ACCELEROMETER) {
+            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        } else if (sensorType == SensorItem.TYPE_GYROSCOPE) {
+            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        } else if (sensorType == SensorItem.TYPE_LIGHT) {
+            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        }
 
         // Register listener for sensor updates
         sensor?.also {
@@ -66,17 +76,22 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         event?.let {
             val xValue = timestamp  // Use timestamp as x-axis for real-time update
-            val xAxisValue = it.values[0]  // Use the first axis value, adjust if needed
-            val yAxisValue = it.values[1]  // Use the second axis value, adjust if needed
-            val zAxisValue = it.values[2]  // Use the third axis value, adjust if needed
+            if (sensorType == SensorItem.TYPE_ACCELEROMETER || sensorType == SensorItem.TYPE_GYROSCOPE) {
+                val xAxisValue = it.values[0]  // Use the first axis value, adjust if needed
+                val yAxisValue = it.values[1]  // Use the second axis value, adjust if needed
+                val zAxisValue = it.values[2]  // Use the third axis value, adjust if needed
 
-            xValueTextView.text = "X: $xAxisValue"
-            yValueTextView.text = "Y: $yAxisValue"
-            zValueTextView.text = "Z: $zAxisValue"
+                valueTextView.text = "X: $xAxisValue \nY: $yAxisValue \nZ: $zAxisValue"
 
-            xEntries.add(Entry(xValue, xAxisValue))
-            yEntries.add(Entry(xValue, yAxisValue))
-            zEntries.add(Entry(xValue, zAxisValue))
+                xEntries.add(Entry(xValue, xAxisValue))
+                yEntries.add(Entry(xValue, yAxisValue))
+                zEntries.add(Entry(xValue, zAxisValue))
+            } else if (sensorType == SensorItem.TYPE_LIGHT) {
+                val yValue = it.values[0]  // Use the first axis value, adjust if needed
+                valueTextView.text = "Lum: $yValue"
+                yEntries.add(Entry(xValue, yValue))
+            }
+
             timestamp += 1  // Increment timestamp for next entry
 
             updateChart()
@@ -84,26 +99,36 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun updateChart() {
-        val xDataSet = LineDataSet(xEntries, "X-Axis").apply {
-            lineWidth = 2f
-            color = android.graphics.Color.RED
-            setDrawCircles(false)
-            setDrawValues(false)
-        }
-        val yDataSet = LineDataSet(yEntries, "Y-Axis").apply {
-            lineWidth = 2f
-            color = android.graphics.Color.GREEN
-            setDrawCircles(false)
-            setDrawValues(false)
-        }
-        val zDataSet = LineDataSet(zEntries, "Z-Axis").apply {
-            lineWidth = 2f
-            color = android.graphics.Color.BLUE
-            setDrawCircles(false)
-            setDrawValues(false)
+        if (sensorType == SensorItem.TYPE_ACCELEROMETER || sensorType == SensorItem.TYPE_GYROSCOPE) {
+            val xDataSet = LineDataSet(xEntries, "X-Axis").apply {
+                lineWidth = 2f
+                color = android.graphics.Color.RED
+                setDrawCircles(false)
+                setDrawValues(false)
+            }
+            val yDataSet = LineDataSet(yEntries, "Y-Axis").apply {
+                lineWidth = 2f
+                color = android.graphics.Color.GREEN
+                setDrawCircles(false)
+                setDrawValues(false)
+            }
+            val zDataSet = LineDataSet(zEntries, "Z-Axis").apply {
+                lineWidth = 2f
+                color = android.graphics.Color.BLUE
+                setDrawCircles(false)
+                setDrawValues(false)
+            }
+            lineChart.data = LineData(xDataSet, yDataSet, zDataSet)
+        } else if (sensorType == SensorItem.TYPE_LIGHT) {
+            val yDataSet = LineDataSet(yEntries, "Luminance").apply {
+                lineWidth = 2f
+                color = android.graphics.Color.BLUE
+                setDrawCircles(false)
+                setDrawValues(false)
+            }
+            lineChart.data = LineData(yDataSet)
         }
 
-        lineChart.data = LineData(xDataSet, yDataSet, zDataSet)
         lineChart.invalidate()  // Refresh chart
     }
 

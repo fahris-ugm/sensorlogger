@@ -19,29 +19,11 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
     <TextView
-        android:id="@+id/xValueTextView"
+        android:id="@+id/valueTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="X: "
+        android:text=""
         app:layout_constraintTop_toBottomOf="@id/sensorTitle"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:padding="8dp" />
-
-    <TextView
-        android:id="@+id/yValueTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Y: "
-        app:layout_constraintTop_toBottomOf="@id/xValueTextView"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:padding="8dp" />
-
-    <TextView
-        android:id="@+id/zValueTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Z: "
-        app:layout_constraintTop_toBottomOf="@id/yValueTextView"
         app:layout_constraintLeft_toLeftOf="parent"
         android:padding="8dp" />
 
@@ -54,5 +36,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/zValueTextView" />
+        app:layout_constraintTop_toBottomOf="@id/valueTextView" />
 </androidx.constraintlayout.widget.ConstraintLayout>
