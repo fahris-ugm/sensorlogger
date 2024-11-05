@@ -10,19 +10,19 @@ import androidx.room.Update
 @Dao
 interface RecordDataDAO {
     @Insert
-    suspend fun insertRecordData(recordData: RecordData)
+    suspend fun insertRecordData(recordData: RecordData): Long
 
     @Insert
-    suspend fun insertAccelerometerData(accelerometerData: AccelerometerData)
+    suspend fun insertAccelerometerData(accelerometerData: AccelerometerData): Long
 
     @Insert
-    suspend fun insertGyroscopeData(gyroscopeData: GyroscopeData)
+    suspend fun insertGyroscopeData(gyroscopeData: GyroscopeData): Long
 
     @Insert
-    suspend fun insertLightData(lightData: LightData)
+    suspend fun insertLightData(lightData: LightData): Long
 
     @Insert
-    suspend fun insertLocationData(locationData: LocationData)
+    suspend fun insertLocationData(locationData: LocationData): Long
 
     @Transaction
     @Query("SELECT * FROM record_data")
@@ -30,40 +30,23 @@ interface RecordDataDAO {
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordDataById(recordId: Int): RecordData
-
-    /*
-    @Transaction
-    @Query("SELECT * FROM accelerometer_data WHERE recordId = :recordId")
-    suspend fun getAccelerometerDataByRecordId(recordId: Int): List<RecordWithAccelerometerData>
-
-    @Transaction
-    @Query("SELECT * FROM gyroscope_data WHERE recordId = :recordId")
-    suspend fun getGyroscopeDataByRecordId(recordId: Int): List<RecordWithGyroscopeData>
-
-    @Transaction
-    @Query("SELECT * FROM light_data WHERE recordId = :recordId")
-    suspend fun getLightDataByRecordId(recordId: Int): List<RecordWithLightData>
-
-    @Transaction
-    @Query("SELECT * FROM location_data WHERE recordId = :recordId")
-    suspend fun getLocationDataByRecordId(recordId: Int): List<RecordWithLocationData>
-*/
-    @Transaction
-    @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordWithAccelerometerData(recordId: Int): List<RecordWithAccelerometerData>
+    suspend fun getRecordDataById(recordId: Long): RecordData
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordWithGyroscopeData(recordId: Int): List<RecordWithGyroscopeData>
+    suspend fun getRecordWithAccelerometerData(recordId: Long): List<RecordWithAccelerometerData>
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordWithLightData(recordId: Int): List<RecordWithLightData>
+    suspend fun getRecordWithGyroscopeData(recordId: Long): List<RecordWithGyroscopeData>
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordWithLocationData(recordId: Int): List<RecordWithLocationData>
+    suspend fun getRecordWithLightData(recordId: Long): List<RecordWithLightData>
+
+    @Transaction
+    @Query("SELECT * FROM record_data WHERE recordId = :recordId")
+    suspend fun getRecordWithLocationData(recordId: Long): List<RecordWithLocationData>
 
     @Update
     suspend fun updateRecordData(recordData: RecordData)

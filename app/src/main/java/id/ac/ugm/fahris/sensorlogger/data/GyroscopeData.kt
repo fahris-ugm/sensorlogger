@@ -16,11 +16,11 @@ import androidx.room.PrimaryKey
     ]
 )
 data class GyroscopeData(
-    @PrimaryKey(autoGenerate = true) val gyroscopeId: Int = 0,
+    @PrimaryKey(autoGenerate = true) val gyroscopeId: Long = 0,
     val timestamp: Long,
     val x: Float,
     val y: Float,
     val z: Float,
     @ColumnInfo(index = true)
-    val recordId: Int
+    val recordId: Long
 )

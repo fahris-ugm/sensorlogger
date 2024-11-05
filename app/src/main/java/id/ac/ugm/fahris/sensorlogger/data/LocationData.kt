@@ -16,11 +16,11 @@ import androidx.room.PrimaryKey
     ]
 )
 data class LocationData (
-    @PrimaryKey(autoGenerate = true) val locationId: Int = 0,
+    @PrimaryKey(autoGenerate = true) val locationId: Long = 0,
     val timestamp: Long,
     val latitude: Float,
     val longitude: Float,
     val altitude: Float,
     @ColumnInfo(index = true)
-    val recordId: Int
+    val recordId: Long
 )

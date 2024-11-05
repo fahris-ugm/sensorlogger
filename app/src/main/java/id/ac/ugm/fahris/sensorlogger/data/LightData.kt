@@ -16,9 +16,9 @@ import androidx.room.PrimaryKey
     ]
 )
 data class LightData (
-    @PrimaryKey(autoGenerate = true) val lightId: Int = 0,
+    @PrimaryKey(autoGenerate = true) val lightId: Long = 0,
     val timestamp: Long,
     val lum: Float,
     @ColumnInfo(index = true)
-    val recordId: Int
+    val recordId: Long
 )
