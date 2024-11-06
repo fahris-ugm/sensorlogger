@@ -7,12 +7,17 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
+import id.ac.ugm.fahris.sensorlogger.data.RecordWithAccelerometerData
+import id.ac.ugm.fahris.sensorlogger.data.RecordWithGyroscopeData
+import id.ac.ugm.fahris.sensorlogger.data.RecordWithLightData
+import id.ac.ugm.fahris.sensorlogger.data.RecordWithLocationData
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStreamWriter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -151,6 +156,66 @@ class FileUtils {
             }
 
             return context.contentResolver.insert(MediaStore.Files.getContentUri("external"), values)
+        }
+        fun writeAccelerometerCSV(context: Context, csvUri: Uri, result:  List<RecordWithAccelerometerData>) {
+            context.contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                val writer = OutputStreamWriter(outputStream)
+                // Write CSV header
+                writer.append("ID,Timestamp,X,Y,Z\n")
+                result.forEach { data ->
+                    data.accelerometerData.forEach { accelerometerData ->
+                        writer.append(
+                            "${accelerometerData.accelerometerId},${accelerometerData.timestamp},${accelerometerData.x},${accelerometerData.y},${accelerometerData.z}\n"
+                        )
+                    }
+                }
+                writer.flush()
+            }
+        }
+        fun writeGyroscopeCSV(context: Context, csvUri: Uri, result:  List<RecordWithGyroscopeData>) {
+            context.contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                val writer = OutputStreamWriter(outputStream)
+                // Write CSV header
+                writer.append("ID,Timestamp,X,Y,Z\n")
+                result.forEach { data ->
+                    data.gyroscopeData.forEach { gyroscopeData ->
+                        writer.append(
+                            "${gyroscopeData.gyroscopeId},${gyroscopeData.timestamp},${gyroscopeData.x},${gyroscopeData.y},${gyroscopeData.z}\n"
+                        )
+                    }
+                }
+                writer.flush()
+            }
+        }
+        fun writeLightCSV(context: Context, csvUri: Uri, result:  List<RecordWithLightData>) {
+            context.contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                val writer = OutputStreamWriter(outputStream)
+                // Write CSV header
+                writer.append("ID,Timestamp,Luminance\n")
+                result.forEach { data ->
+                    data.lightData.forEach { lightData ->
+                        writer.append(
+                            "${lightData.lightId},${lightData.timestamp},${lightData.lum}\n"
+                        )
+                    }
+                }
+                writer.flush()
+            }
+        }
+        fun writeLocationCSV(context: Context, csvUri: Uri, result:  List<RecordWithLocationData>) {
+            context.contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                val writer = OutputStreamWriter(outputStream)
+                // Write CSV header
+                writer.append("ID,Timestamp,Lat,Long,Alt\n")
+                result.forEach { data ->
+                    data.locationData.forEach { locationData ->
+                        writer.append(
+                            "${locationData.locationId},${locationData.timestamp},${locationData.latitude},${locationData.longitude},${locationData.altitude}\n"
+                        )
+                    }
+                }
+                writer.flush()
+            }
         }
         fun deleteSubDirectoryInMediaStore(context: Context, subDirectoryName: String) {
             // Define the relative path of the sub-directory

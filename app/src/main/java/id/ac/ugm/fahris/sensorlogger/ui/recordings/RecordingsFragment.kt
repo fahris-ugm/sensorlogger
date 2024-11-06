@@ -58,7 +58,7 @@ class RecordingsFragment : Fragment() {
         recordingsViewModel.allRecordData.observe(viewLifecycleOwner
         ) { recordItems ->
             recordItems?.let {
-                recordingsAdapter.submitList(it)
+                recordingsAdapter.submitList(it.reversed())
             }
         }
 

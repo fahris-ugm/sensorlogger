@@ -119,19 +119,19 @@ class SensorDetailActivity : AppCompatActivity(), SensorEventListener {
 
     private fun updateChart() {
         if (sensorType == SensorItem.TYPE_ACCELEROMETER || sensorType == SensorItem.TYPE_GYROSCOPE) {
-            val xDataSet = LineDataSet(xEntries, "X-Axis").apply {
+            val xDataSet = LineDataSet(xEntries, "X").apply {
                 lineWidth = 2f
                 color = android.graphics.Color.RED
                 setDrawCircles(false)
                 setDrawValues(false)
             }
-            val yDataSet = LineDataSet(yEntries, "Y-Axis").apply {
+            val yDataSet = LineDataSet(yEntries, "Y").apply {
                 lineWidth = 2f
                 color = android.graphics.Color.GREEN
                 setDrawCircles(false)
                 setDrawValues(false)
             }
-            val zDataSet = LineDataSet(zEntries, "Z-Axis").apply {
+            val zDataSet = LineDataSet(zEntries, "Z").apply {
                 lineWidth = 2f
                 color = android.graphics.Color.BLUE
                 setDrawCircles(false)

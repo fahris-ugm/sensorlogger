@@ -2,12 +2,8 @@ package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.ContentValues
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -18,12 +14,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import com.github.mikephil.charting.BuildConfig
 import id.ac.ugm.fahris.sensorlogger.R
 import id.ac.ugm.fahris.sensorlogger.data.AppDatabase
 import id.ac.ugm.fahris.sensorlogger.data.RecordData
@@ -34,13 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileWriter
 import java.io.IOException
-import java.io.OutputStreamWriter
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSensorClickListener {
     private lateinit var recordTitleEditText: EditText
@@ -95,7 +83,6 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             recordedSensorsTextView = findViewById(R.id.recordedSensorsTextView)
             sensorsRecyclerView = findViewById(R.id.sensorsRecyclerView)
 
-            val thisActivity = this
             lifecycleScope.launch {
                 val recordData = appDatabase.recordDataDao().getRecordDataById(recordId)
                 if (recordData != null) {
@@ -125,7 +112,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
                         recordedSensorsTextView.visibility = View.GONE
                     }
 
-                    sensorsAdapter = RecordedSensorListAdapter(sensorItems, thisActivity)
+                    sensorsAdapter = RecordedSensorListAdapter(sensorItems, this@RecordDetailActivity)
                     sensorsRecyclerView.adapter = sensorsAdapter
 
                     // Edit button logic
@@ -228,19 +215,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             return false
         } else {
             try {
-                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream)
-                    // Write CSV header
-                    writer.append("ID,Timestamp,X,Y,Z\n")
-                    result.forEach { data ->
-                        data.accelerometerData.forEach { accelerometerData ->
-                            writer.append(
-                                "${accelerometerData.accelerometerId},${accelerometerData.timestamp},${accelerometerData.x},${accelerometerData.y},${accelerometerData.z}\n"
-                            )
-                        }
-                    }
-                    writer.flush()
-                }
+                FileUtils.writeAccelerometerCSV(this@RecordDetailActivity, csvUri, result)
             } catch (e: IOException) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -266,19 +241,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             return false
         } else {
             try {
-                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream)
-                    // Write CSV header
-                    writer.append("ID,Timestamp,X,Y,Z\n")
-                    result.forEach { data ->
-                        data.gyroscopeData.forEach { gyroscopeData ->
-                            writer.append(
-                                "${gyroscopeData.gyroscopeId},${gyroscopeData.timestamp},${gyroscopeData.x},${gyroscopeData.y},${gyroscopeData.z}\n"
-                            )
-                        }
-                    }
-                    writer.flush()
-                }
+                FileUtils.writeGyroscopeCSV(this@RecordDetailActivity, csvUri, result)
             } catch (e: IOException) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -304,19 +267,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             return false
         } else {
             try {
-                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream)
-                    // Write CSV header
-                    writer.append("ID,Timestamp,Luminance\n")
-                    result.forEach { data ->
-                        data.lightData.forEach { lightData ->
-                            writer.append(
-                                "${lightData.lightId},${lightData.timestamp},${lightData.lum}\n"
-                            )
-                        }
-                    }
-                    writer.flush()
-                }
+                FileUtils.writeLightCSV(this@RecordDetailActivity, csvUri, result)
             } catch (e: IOException) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -343,19 +294,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             return false
         } else {
             try {
-                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream)
-                    // Write CSV header
-                    writer.append("ID,Timestamp,Lat,Long,Alt\n")
-                    result.forEach { data ->
-                        data.locationData.forEach { locationData ->
-                            writer.append(
-                                "${locationData.locationId},${locationData.timestamp},${locationData.latitude},${locationData.longitude},${locationData.altitude}\n"
-                            )
-                        }
-                    }
-                    writer.flush()
-                }
+                FileUtils.writeLocationCSV(this@RecordDetailActivity, csvUri, result)
             } catch (e: IOException) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -437,5 +376,19 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
 
     override fun onSensorDetailsClick(sensorItem: SensorItem) {
         //TODO
+        Log.d("RecordDetailActivity", "onSensorDetailsClick: $sensorItem")
+        if (sensorItem.type == SensorItem.TYPE_LOCATION) {
+            val intent = Intent(this, RecordedSensorDetailActivity::class.java)
+            intent.putExtra("sensor_name", sensorItem.name)
+            intent.putExtra("sensor_type", sensorItem.type)
+            intent.putExtra("record_id", recordId)
+            startActivity(intent)
+        } else {
+            val intent = Intent(this, RecordedSensorDetailActivity::class.java)
+            intent.putExtra("sensor_name", sensorItem.name)
+            intent.putExtra("sensor_type", sensorItem.type)
+            intent.putExtra("record_id", recordId)
+            startActivity(intent)
+        }
     }
 }

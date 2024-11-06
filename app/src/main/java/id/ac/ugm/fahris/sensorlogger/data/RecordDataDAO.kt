@@ -34,7 +34,7 @@ interface RecordDataDAO {
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")
-    suspend fun getRecordDataById(recordId: Long): RecordData
+    suspend fun getRecordDataById(recordId: Long): RecordData?
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")

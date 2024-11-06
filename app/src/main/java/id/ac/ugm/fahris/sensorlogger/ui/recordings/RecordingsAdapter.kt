@@ -47,18 +47,7 @@ class RecordingsAdapter(
             true
         }
     }
-    /*
-    fun toggleSelection(position: Int) {
-        Log.d("RecordingsAdapter", "toggleSelection called with position: $position")
-        if (selectedItems.contains(position)) {
-            selectedItems.remove(position)
-        } else {
-            selectedItems.add(position)
-        }
-        notifyItemChanged(position)
-    }
 
-     */
     // Clear all selected items
     fun clearSelection() {
         val selectedPositions = selectedItemsIndex.toList()

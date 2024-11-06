@@ -86,6 +86,9 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
     private var currentRecordId: Long = -1
     private var currentRecordData: RecordData? = null
 
+    private val gravity = FloatArray(3)
+    private val linearAcceleration = FloatArray(3)
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -384,11 +387,27 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
 
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
             if (!viewModel.isRecordAccelerometer) return
+
+            // Apply a low-pass filter to isolate the gravity component
+            val alpha = 0.8f
+            val valueX = event.values.getOrNull(0) ?: 0f
+            val valueY = event.values.getOrNull(1) ?: 0f
+            val valueZ = event.values.getOrNull(2) ?: 0f
+
+            gravity[0] = alpha * gravity[0] + (1 - alpha) * valueX
+            gravity[1] = alpha * gravity[1] + (1 - alpha) * valueY
+            gravity[2] = alpha * gravity[2] + (1 - alpha) * valueZ
+
+            // Calculate linear acceleration (excluding gravity)
+            linearAcceleration[0] = valueX - gravity[0]
+            linearAcceleration[1] = valueY - gravity[1]
+            linearAcceleration[2] = valueZ - gravity[2]
+
             val sensorData = AccelerometerData(
                 timestamp = System.currentTimeMillis(),
-                x = event.values.getOrNull(0) ?: 0f,
-                y = event.values.getOrNull(1) ?: 0f,
-                z = event.values.getOrNull(2) ?: 0f,
+                x = linearAcceleration[0],
+                y = linearAcceleration[1],
+                z = linearAcceleration[2],
                 recordId = currentRecordId
             )
             lifecycleScope.launch {
