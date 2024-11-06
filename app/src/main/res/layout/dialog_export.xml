@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/editTextPrefix"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="File Prefix" />
+
+    <CheckBox
+        android:id="@+id/checkBoxZip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Convert to ZIP file" />
+
+    <CheckBox
+        android:id="@+id/checkBoxShare"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share file after export" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/buttonCancel"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:textColor="?attr/colorError"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <Button
+            android:id="@+id/buttonConfirm"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Confirm"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</LinearLayout>

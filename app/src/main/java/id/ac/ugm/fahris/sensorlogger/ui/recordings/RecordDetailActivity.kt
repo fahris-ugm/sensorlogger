@@ -1,7 +1,14 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
 import android.app.AlertDialog
+import android.app.ProgressDialog
+import android.content.ContentValues
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -11,16 +18,29 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.github.mikephil.charting.BuildConfig
 import id.ac.ugm.fahris.sensorlogger.R
 import id.ac.ugm.fahris.sensorlogger.data.AppDatabase
 import id.ac.ugm.fahris.sensorlogger.data.RecordData
 import id.ac.ugm.fahris.sensorlogger.data.SensorItem
+import id.ac.ugm.fahris.sensorlogger.utils.FileUtils
 import id.ac.ugm.fahris.sensorlogger.utils.TimeUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileWriter
+import java.io.IOException
+import java.io.OutputStreamWriter
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSensorClickListener {
     private lateinit var recordTitleEditText: EditText
@@ -39,6 +59,8 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
     // SQLite Room database
     private lateinit var appDatabase: AppDatabase
 
+    private lateinit var progressDialog: ProgressDialog
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,6 +72,13 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
         }
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Details"
+
+        progressDialog = ProgressDialog(this).apply {
+            setTitle("Exporting Files")
+            setMessage("Please wait...")
+            setCancelable(false)
+            setProgressStyle(ProgressDialog.STYLE_SPINNER)
+        }
 
         appDatabase = AppDatabase.getDatabase(this)
         // Retrieve recording ID from the intent
@@ -148,7 +177,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
                 true
             }
             R.id.action_export -> {
-                exportRecord()
+                showExportDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -185,9 +214,111 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
         }
     }
 
-    private fun exportRecord() {
-        // Implement export functionality (e.g., export to file)
-        Toast.makeText(this, "Record exported", Toast.LENGTH_SHORT).show()
+    private suspend fun exportAccelerometerData(recordId: Long): Boolean {
+        val result = appDatabase.recordDataDao().getRecordWithAccelerometerData(recordId)
+        val fileName = "recording_accelerometer_${System.currentTimeMillis()}.csv"
+        val zipFileName = fileName.replace(".csv", ".zip")
+        val csvUri = FileUtils.createFileInMediaStore(this@RecordDetailActivity, fileName, "text/csv")
+        if (csvUri == null) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } else {
+            try {
+                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream)
+                    // Write CSV header
+                    writer.append("ID,Timestamp,X,Y,Z\n")
+                    result.forEach { data ->
+                        data.accelerometerData.forEach { accelerometerData ->
+                            writer.append(
+                                "${accelerometerData.accelerometerId},${accelerometerData.timestamp},${accelerometerData.x},${accelerometerData.y},${accelerometerData.z}\n"
+                            )
+                        }
+                    }
+                    writer.flush()
+                }
+
+                // TODO: move to overall export
+                val zipUri = FileUtils.createFileInMediaStore(this@RecordDetailActivity, zipFileName, "application/zip")
+                if (zipUri != null) {
+                    FileUtils.compressToZip(this@RecordDetailActivity, csvUri, zipUri)
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        FileUtils.shareZipFile(this@RecordDetailActivity, zipUri)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Toast.makeText(
+                            this@RecordDetailActivity,
+                            "Error creating ZIP file",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@RecordDetailActivity, "Error exporting file: {$e.message}", Toast.LENGTH_LONG).show()
+                }
+                return false
+            }
+        }
+        return true
+    }
+    private fun exportGyroscopeData(recordId: Long) {
+        lifecycleScope.launch {
+            val result = appDatabase.recordDataDao().getRecordWithGyroscopeData(recordId)
+        }
+    }
+    private fun exportLightData(recordId: Long) {
+        lifecycleScope.launch {
+            val result = appDatabase.recordDataDao().getRecordWithLightData(recordId)
+        }
+    }
+    private fun exportLocationData(recordId: Long) {
+        lifecycleScope.launch {
+            val result = appDatabase.recordDataDao().getRecordWithLocationData(recordId)
+        }
+    }
+    private fun showExportDialog() {
+        val dialog = ExportOptionsDialogFragment.newInstance()
+        dialog.onConfirmListener = { prefix, convertToZip, shareFile ->
+            exportRecord(prefix, convertToZip, shareFile)
+        }
+        dialog.show(supportFragmentManager, "export_options_dialog")
+    }
+    private fun exportRecord(prefix: String, convertToZip: Boolean, shareFile: Boolean) {
+        recordData?.let {
+            // Show ProgressDialog
+            progressDialog.show()
+
+            // Launch a coroutine to handle the export process in the background
+            CoroutineScope(Dispatchers.IO).launch {
+                if (it.flagAccelerometer) {
+                    if (!exportAccelerometerData(it.recordId)) {
+                        return@launch
+                    }
+                }
+                /*
+                if (it.flagGyroscope) {
+                    exportGyroscopeData(it.recordId)
+                }
+                if (it.flagLight) {
+                    exportLightData(it.recordId)
+                }
+                if (it.flagLocation) {
+                    exportLocationData(it.recordId)
+                }
+
+                 */
+            }
+        }
     }
 
     override fun onSensorDetailsClick(sensorItem: SensorItem) {
