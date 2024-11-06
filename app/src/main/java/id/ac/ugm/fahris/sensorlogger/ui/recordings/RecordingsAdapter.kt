@@ -1,5 +1,6 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,7 +15,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class RecordingsAdapter : ListAdapter<RecordData, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
+class RecordingsAdapter(
+    private val onItemClickListener: (RecordData) -> Unit,
+    private val onToggleSelection: (Int) -> Unit
+) : ListAdapter<RecordData, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback())
+{
+    val selectedItemsIndex = mutableSetOf<Int>()  // Set of selected item positions
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecordingViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.record_list_item, parent, false)
@@ -23,6 +29,44 @@ class RecordingsAdapter : ListAdapter<RecordData, RecordingsAdapter.RecordingVie
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
         val recording = getItem(position)
         holder.bind(recording)
+        holder.itemView.isSelected = selectedItemsIndex.contains(position)
+        holder.itemView.setBackgroundColor(
+            if (selectedItemsIndex.contains(position)) Color.LTGRAY else Color.TRANSPARENT
+        )
+        holder.itemView.setOnClickListener {
+            if (selectedItemsIndex.isNotEmpty()) {
+                onToggleSelection(position)
+            } else {
+                onItemClickListener(recording)
+            }
+        }
+        holder.itemView.setOnLongClickListener {
+            Log.d("RecordingsAdapter", "Long click detected")
+            onToggleSelection(position)
+            true
+        }
+    }
+    /*
+    fun toggleSelection(position: Int) {
+        Log.d("RecordingsAdapter", "toggleSelection called with position: $position")
+        if (selectedItems.contains(position)) {
+            selectedItems.remove(position)
+        } else {
+            selectedItems.add(position)
+        }
+        notifyItemChanged(position)
+    }
+
+     */
+    // Clear all selected items
+    fun clearSelection() {
+        val selectedPositions = selectedItemsIndex.toList()
+        selectedItemsIndex.clear()
+        selectedPositions.forEach { notifyItemChanged(it) }
+    }
+    // Return the selected items
+    fun getSelectedItems(): List<RecordData> {
+        return selectedItemsIndex.map { getItem(it) }
     }
 
     class RecordingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

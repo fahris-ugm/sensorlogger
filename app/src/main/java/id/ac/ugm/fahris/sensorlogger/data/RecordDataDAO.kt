@@ -58,4 +58,7 @@ interface RecordDataDAO {
     @Delete
     suspend fun deleteRecordData(recordData: RecordData)
 
+    @Query("DELETE FROM record_data WHERE recordId IN (:recordDataIds)")
+    suspend fun deleteRecordDataByIds(recordDataIds: List<Long>)
+
 }
