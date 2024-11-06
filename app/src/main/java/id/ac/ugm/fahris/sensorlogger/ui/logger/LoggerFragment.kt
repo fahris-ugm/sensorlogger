@@ -161,9 +161,9 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
         if (!viewModel.isRecordLocation) return
         val locationData = LocationData(
             timestamp = System.currentTimeMillis(),
-            latitude = location.latitude.toFloat(),
-            longitude = location.longitude.toFloat(),
-            altitude = location.altitude.toFloat(),
+            latitude = location.latitude,
+            longitude = location.longitude,
+            altitude = location.altitude,
             recordId = currentRecordId
         )
         // TODO timing

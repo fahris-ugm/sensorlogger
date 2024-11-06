@@ -4,6 +4,7 @@ import android.app.ProgressDialog
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -18,6 +19,12 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.PolylineOptions
 import id.ac.ugm.fahris.sensorlogger.R
 import id.ac.ugm.fahris.sensorlogger.data.AppDatabase
 import id.ac.ugm.fahris.sensorlogger.data.SensorItem
@@ -28,7 +35,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
-class RecordedSensorDetailActivity : AppCompatActivity() {
+class RecordedSensorDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var lineChart: LineChart
     private lateinit var titleTextView: TextView
     private var sensorType = -1
@@ -43,6 +50,9 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
 
     private lateinit var progressDialog: ProgressDialog
 
+    private lateinit var googleMap: GoogleMap
+    private val pathPoints = mutableListOf<LatLng>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -52,20 +62,6 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        // Initialize the line chart
-        lineChart = findViewById(R.id.recordedLineChart)
-        lineChart.axisRight.isEnabled = false
-        lineChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        lineChart.setTouchEnabled(true)
-        lineChart.setPinchZoom(true)
-        lineChart.description = Description().apply {
-            text = ""
-        }
-        lineChart.legend.verticalAlignment = Legend.LegendVerticalAlignment.TOP
-        lineChart.legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-        lineChart.legend.orientation = Legend.LegendOrientation.HORIZONTAL
-        lineChart.legend.setDrawInside(false)
-
         titleTextView = findViewById(R.id.recordedSensorTitle)
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -86,6 +82,28 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
             setProgressStyle(ProgressDialog.STYLE_SPINNER)
         }
         appDatabase = AppDatabase.getDatabase(this)
+
+        // Initialize the line chart
+        lineChart = findViewById(R.id.recordedLineChart)
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.recordedMap) as SupportMapFragment
+        if (sensorType == SensorItem.TYPE_LOCATION) {
+            lineChart.visibility = View.GONE
+            mapFragment.getMapAsync(this)
+        } else {
+            mapFragment.view?.visibility  = View.GONE
+            lineChart.axisRight.isEnabled = false
+            lineChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
+            lineChart.setTouchEnabled(true)
+            lineChart.setPinchZoom(true)
+            lineChart.description = Description().apply {
+                text = ""
+            }
+            lineChart.legend.verticalAlignment = Legend.LegendVerticalAlignment.TOP
+            lineChart.legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+            lineChart.legend.orientation = Legend.LegendOrientation.HORIZONTAL
+            lineChart.legend.setDrawInside(false)
+        }
+
         if (recordId >= 0) {
             lifecycleScope.launch {
                 if (sensorType == SensorItem.TYPE_ACCELEROMETER) {
@@ -131,6 +149,9 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
                             counter++
                         }
                     }
+                } else if (sensorType == SensorItem.TYPE_LOCATION) {
+                    // Do Nothing
+
                 }
                 updateChart()
             }
@@ -187,6 +208,34 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        googleMap.uiSettings.isZoomControlsEnabled = true
+        populatePathPoints()
+    }
+    private fun populatePathPoints() {
+        lifecycleScope.launch {
+            val sensorData = appDatabase.recordDataDao().getRecordWithLocationData(recordId)
+            val latLng: LatLng? = sensorData.firstOrNull()?.locationData?.firstOrNull()?.let {
+                LatLng(it.latitude, it.longitude)
+            }
+            sensorData.forEach { data ->
+                data.locationData.forEach { locationData ->
+                    pathPoints.add(LatLng(locationData.latitude, locationData.longitude))
+                }
+            }
+            drawPath()
+            // Move camera to the latest location
+            latLng?.let {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
+            }
+        }
+    }
+    private fun drawPath() {
+        val polylineOptions = PolylineOptions().addAll(pathPoints).width(5f).color(android.graphics.Color.BLUE)
+        googleMap.clear() // Clear previous path
+        googleMap.addPolyline(polylineOptions) // Draw updated path
     }
     private fun showExportDialog() {
         val dialog = ExportOptionsDialogFragment.newInstance()
@@ -273,6 +322,32 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
         }
         return true
     }
+    private suspend fun exportLocationData(recordId: Long, prefix: String, uniqueId: Long): Boolean {
+        val result = appDatabase.recordDataDao().getRecordWithLocationData(recordId)
+        val subDir = "${prefix}_${uniqueId}"
+        val fileName = "${prefix}_location_${uniqueId}.csv"
+
+        val csvUri = FileUtils.createFileInSubDirectory(this@RecordedSensorDetailActivity, fileName, "text/csv", subDir)
+        if (csvUri == null) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(this@RecordedSensorDetailActivity, "Error creating CSV file for location", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } else {
+            try {
+                FileUtils.writeLocationCSV(this@RecordedSensorDetailActivity, csvUri, result)
+            } catch (e: IOException) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@RecordedSensorDetailActivity, "Error exporting file: {$e.message}", Toast.LENGTH_LONG).show()
+                }
+                return false
+            }
+        }
+        return true
+    }
     // Function to export sensor data
     private fun exportSensorData(prefix: String, shareFile: Boolean) {
         // Show ProgressDialog
@@ -290,6 +365,10 @@ class RecordedSensorDetailActivity : AppCompatActivity() {
                 }
             } else if (sensorType == SensorItem.TYPE_LIGHT) {
                 if (!exportLightData(recordId, prefix, uniqueId)) {
+                    return@launch
+                }
+            } else if (sensorType == SensorItem.TYPE_LOCATION) {
+                if (!exportLocationData(recordId, prefix, uniqueId)) {
                     return@launch
                 }
             }
