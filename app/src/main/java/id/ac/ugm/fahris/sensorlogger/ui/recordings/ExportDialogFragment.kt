@@ -12,12 +12,11 @@ import id.ac.ugm.fahris.sensorlogger.R
 class ExportOptionsDialogFragment : DialogFragment() {
 
     private lateinit var editTextPrefix: EditText
-    private lateinit var checkBoxZip: CheckBox
     private lateinit var checkBoxShare: CheckBox
     private lateinit var buttonConfirm: Button
     private lateinit var buttonCancel: Button
 
-    var onConfirmListener: ((String, Boolean, Boolean) -> Unit)? = null
+    var onConfirmListener: ((String, Boolean) -> Unit)? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -26,16 +25,15 @@ class ExportOptionsDialogFragment : DialogFragment() {
         val view = inflater.inflate(R.layout.dialog_export, container, false)
 
         editTextPrefix = view.findViewById(R.id.editTextPrefix)
-        checkBoxZip = view.findViewById(R.id.checkBoxZip)
         checkBoxShare = view.findViewById(R.id.checkBoxShare)
+        checkBoxShare.isChecked = true
         buttonConfirm = view.findViewById(R.id.buttonConfirm)
         buttonCancel = view.findViewById(R.id.buttonCancel)
 
         buttonConfirm.setOnClickListener {
             val prefix = editTextPrefix.text.toString()
-            val convertToZip = checkBoxZip.isChecked
             val shareFile = checkBoxShare.isChecked
-            onConfirmListener?.invoke(prefix, convertToZip, shareFile)
+            onConfirmListener?.invoke(prefix, shareFile)
             dismiss()
         }
 

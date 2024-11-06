@@ -12,16 +12,10 @@
         android:hint="File Prefix" />
 
     <CheckBox
-        android:id="@+id/checkBoxZip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Convert to ZIP file" />
-
-    <CheckBox
         android:id="@+id/checkBoxShare"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Share file after export" />
+        android:text="Zip and share file after export" />
 
     <LinearLayout
         android:layout_width="match_parent"

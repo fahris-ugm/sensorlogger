@@ -214,15 +214,16 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
         }
     }
 
-    private suspend fun exportAccelerometerData(recordId: Long): Boolean {
+    private suspend fun exportAccelerometerData(recordId: Long, prefix: String, uniqueId: Long): Boolean {
         val result = appDatabase.recordDataDao().getRecordWithAccelerometerData(recordId)
-        val fileName = "recording_accelerometer_${System.currentTimeMillis()}.csv"
-        val zipFileName = fileName.replace(".csv", ".zip")
-        val csvUri = FileUtils.createFileInMediaStore(this@RecordDetailActivity, fileName, "text/csv")
+        val subDir = "${prefix}_${uniqueId}"
+        val fileName = "${prefix}_accelerometer_${uniqueId}.csv"
+        //val zipFileName = "$_fileName.zip"
+        val csvUri = FileUtils.createFileInSubDirectory(this@RecordDetailActivity, fileName, "text/csv", subDir)
         if (csvUri == null) {
             withContext(Dispatchers.Main) {
                 progressDialog.dismiss()
-                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file for accelerometer", Toast.LENGTH_SHORT).show()
             }
             return false
         } else {
@@ -240,26 +241,6 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
                     }
                     writer.flush()
                 }
-
-                // TODO: move to overall export
-                val zipUri = FileUtils.createFileInMediaStore(this@RecordDetailActivity, zipFileName, "application/zip")
-                if (zipUri != null) {
-                    FileUtils.compressToZip(this@RecordDetailActivity, csvUri, zipUri)
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        FileUtils.shareZipFile(this@RecordDetailActivity, zipUri)
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        progressDialog.dismiss()
-                        Toast.makeText(
-                            this@RecordDetailActivity,
-                            "Error creating ZIP file",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
             } catch (e: IOException) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
@@ -271,52 +252,185 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
         }
         return true
     }
-    private fun exportGyroscopeData(recordId: Long) {
-        lifecycleScope.launch {
-            val result = appDatabase.recordDataDao().getRecordWithGyroscopeData(recordId)
+    private suspend fun exportGyroscopeData(recordId: Long, prefix: String, uniqueId: Long): Boolean {
+        val result = appDatabase.recordDataDao().getRecordWithGyroscopeData(recordId)
+        val subDir = "${prefix}_${uniqueId}"
+        val fileName = "${prefix}_gyroscope_${uniqueId}.csv"
+
+        val csvUri = FileUtils.createFileInSubDirectory(this@RecordDetailActivity, fileName, "text/csv", subDir)
+        if (csvUri == null) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file for gyroscope", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } else {
+            try {
+                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream)
+                    // Write CSV header
+                    writer.append("ID,Timestamp,X,Y,Z\n")
+                    result.forEach { data ->
+                        data.gyroscopeData.forEach { gyroscopeData ->
+                            writer.append(
+                                "${gyroscopeData.gyroscopeId},${gyroscopeData.timestamp},${gyroscopeData.x},${gyroscopeData.y},${gyroscopeData.z}\n"
+                            )
+                        }
+                    }
+                    writer.flush()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@RecordDetailActivity, "Error exporting file: {$e.message}", Toast.LENGTH_LONG).show()
+                }
+                return false
+            }
         }
+        return true
     }
-    private fun exportLightData(recordId: Long) {
-        lifecycleScope.launch {
-            val result = appDatabase.recordDataDao().getRecordWithLightData(recordId)
+    private suspend fun exportLightData(recordId: Long, prefix: String, uniqueId: Long): Boolean {
+        val result = appDatabase.recordDataDao().getRecordWithLightData(recordId)
+        val subDir = "${prefix}_${uniqueId}"
+        val fileName = "${prefix}_light_${uniqueId}.csv"
+
+        val csvUri = FileUtils.createFileInSubDirectory(this@RecordDetailActivity, fileName, "text/csv", subDir)
+        if (csvUri == null) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file for light", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } else {
+            try {
+                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream)
+                    // Write CSV header
+                    writer.append("ID,Timestamp,Luminance\n")
+                    result.forEach { data ->
+                        data.lightData.forEach { lightData ->
+                            writer.append(
+                                "${lightData.lightId},${lightData.timestamp},${lightData.lum}\n"
+                            )
+                        }
+                    }
+                    writer.flush()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@RecordDetailActivity, "Error exporting file: {$e.message}", Toast.LENGTH_LONG).show()
+                }
+                return false
+            }
         }
+        return true
     }
-    private fun exportLocationData(recordId: Long) {
-        lifecycleScope.launch {
-            val result = appDatabase.recordDataDao().getRecordWithLocationData(recordId)
+    private suspend fun exportLocationData(recordId: Long, prefix: String, uniqueId: Long): Boolean {
+
+        val result = appDatabase.recordDataDao().getRecordWithLocationData(recordId)
+        val subDir = "${prefix}_${uniqueId}"
+        val fileName = "${prefix}_location_${uniqueId}.csv"
+
+        val csvUri = FileUtils.createFileInSubDirectory(this@RecordDetailActivity, fileName, "text/csv", subDir)
+        if (csvUri == null) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(this@RecordDetailActivity, "Error creating CSV file for location", Toast.LENGTH_SHORT).show()
+            }
+            return false
+        } else {
+            try {
+                contentResolver.openOutputStream(csvUri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream)
+                    // Write CSV header
+                    writer.append("ID,Timestamp,Lat,Long,Alt\n")
+                    result.forEach { data ->
+                        data.locationData.forEach { locationData ->
+                            writer.append(
+                                "${locationData.locationId},${locationData.timestamp},${locationData.latitude},${locationData.longitude},${locationData.altitude}\n"
+                            )
+                        }
+                    }
+                    writer.flush()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@RecordDetailActivity, "Error exporting file: {$e.message}", Toast.LENGTH_LONG).show()
+                }
+                return false
+            }
         }
+        return true
     }
     private fun showExportDialog() {
         val dialog = ExportOptionsDialogFragment.newInstance()
-        dialog.onConfirmListener = { prefix, convertToZip, shareFile ->
-            exportRecord(prefix, convertToZip, shareFile)
+        dialog.onConfirmListener = { prefix, shareFile ->
+            exportRecord(prefix, shareFile)
         }
         dialog.show(supportFragmentManager, "export_options_dialog")
     }
-    private fun exportRecord(prefix: String, convertToZip: Boolean, shareFile: Boolean) {
+    private fun exportRecord(prefix: String, shareFile: Boolean) {
         recordData?.let {
             // Show ProgressDialog
             progressDialog.show()
 
             // Launch a coroutine to handle the export process in the background
             CoroutineScope(Dispatchers.IO).launch {
+                val uniqueId = System.currentTimeMillis()
                 if (it.flagAccelerometer) {
-                    if (!exportAccelerometerData(it.recordId)) {
+                    if (!exportAccelerometerData(it.recordId, prefix, uniqueId)) {
                         return@launch
                     }
                 }
-                /*
                 if (it.flagGyroscope) {
-                    exportGyroscopeData(it.recordId)
+                    if (!exportGyroscopeData(it.recordId, prefix, uniqueId)) {
+                        return@launch
+                    }
                 }
                 if (it.flagLight) {
-                    exportLightData(it.recordId)
+                    if (!exportLightData(it.recordId, prefix, uniqueId)) {
+                        return@launch
+                    }
                 }
                 if (it.flagLocation) {
-                    exportLocationData(it.recordId)
+                    if (!exportLocationData(it.recordId, prefix, uniqueId)) {
+                        return@launch
+                    }
                 }
 
-                 */
+                if (shareFile) {
+                    val directoryName = "${prefix}_${uniqueId}"
+                    val zipFileName = "${directoryName}.zip"
+                    val zipUri = FileUtils.zipDirectoryAndSaveToMediaStore(
+                        this@RecordDetailActivity,
+                        directoryName,
+                        zipFileName
+                    )
+                    if (zipUri != null) {
+                        withContext(Dispatchers.Main) {
+                            progressDialog.dismiss()
+                            FileUtils.shareZipFile(this@RecordDetailActivity, zipUri)
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            progressDialog.dismiss()
+                            Toast.makeText(
+                                this@RecordDetailActivity,
+                                "Error creating ZIP file",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                    }
+                }
             }
         }
     }
