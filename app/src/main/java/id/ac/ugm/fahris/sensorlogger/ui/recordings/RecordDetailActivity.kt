@@ -1,5 +1,6 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -119,10 +120,6 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             finish()
         }
     }
-    // Mock function to return a list of recorded sensors
-    private fun getRecordedSensors(): List<String> {
-        return listOf("Accelerometer", "Gyroscope", "Light Sensor")
-    }
 
     private fun saveTitleChanges() {
         if (recordData != null) {
@@ -159,9 +156,33 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
     }
 
     private fun deleteRecord() {
-        // Delete the record from the database (implement actual delete logic here)
-        Toast.makeText(this, "Record deleted", Toast.LENGTH_SHORT).show()
-        finish() // Close activity after deletion
+        // Show confirmation dialog
+        AlertDialog.Builder(this).apply {
+            setTitle("Delete Confirmation")
+            setMessage("Are you sure you want to delete record ${recordData?.title}?")
+
+            setPositiveButton("Delete") { _, _ ->
+                // Proceed with deletion if confirmed
+                performDeletion()
+            }
+
+            setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()  // Close the dialog if canceled
+            }
+
+            create()
+            show()
+        }
+
+    }
+    private fun performDeletion() {
+        if (recordData != null) {
+            lifecycleScope.launch {
+                appDatabase.recordDataDao().deleteRecordData(recordData!!)
+                Toast.makeText(this@RecordDetailActivity, "Record deleted", Toast.LENGTH_SHORT).show()
+                finish() // Close activity after deletion
+            }
+        }
     }
 
     private fun exportRecord() {
