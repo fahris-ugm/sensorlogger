@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import id.ac.ugm.fahris.sensorlogger.R
 import id.ac.ugm.fahris.sensorlogger.data.AppDatabase
+import id.ac.ugm.fahris.sensorlogger.data.RecordData
 import id.ac.ugm.fahris.sensorlogger.data.SensorItem
 import id.ac.ugm.fahris.sensorlogger.utils.TimeUtils
 import kotlinx.coroutines.launch
@@ -31,6 +32,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
 
     private var isEditMode = false
     private lateinit var sensorsAdapter: RecordedSensorListAdapter
+    private var recordData: RecordData? = null
     private var recordId: Long = -1
 
     // SQLite Room database
@@ -67,6 +69,7 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
             lifecycleScope.launch {
                 val recordData = appDatabase.recordDataDao().getRecordDataById(recordId)
                 if (recordData != null) {
+                    this@RecordDetailActivity.recordData = recordData
                     recordTitleEditText.setText(recordData.title)
                     startTimestampTextView.text = "Start: ${TimeUtils.formatTimestamp(recordData.startTimestamp)}"
                     endTimestampTextView.text = "End: ${TimeUtils.formatTimestamp(recordData.endTimestamp)}"
@@ -122,8 +125,14 @@ class RecordDetailActivity : AppCompatActivity(), RecordedSensorListAdapter.OnSe
     }
 
     private fun saveTitleChanges() {
-        // Save title to the database (implement actual save logic here)
-        Toast.makeText(this, "Title saved", Toast.LENGTH_SHORT).show()
+        if (recordData != null) {
+            lifecycleScope.launch {
+                val newTitle = recordTitleEditText.text.toString()
+                recordData!!.title = newTitle
+                appDatabase.recordDataDao().updateRecordData(recordData!!)
+                Toast.makeText(this@RecordDetailActivity, "Title saved", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
