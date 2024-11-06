@@ -1,12 +1,16 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import id.ac.ugm.fahris.sensorlogger.databinding.FragmentRecordingsBinding
 
 class RecordingsFragment : Fragment() {
@@ -17,21 +21,31 @@ class RecordingsFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
+    private val recordingsViewModel: RecordingsViewModel by viewModels()
+    private lateinit var recordingsRecyclerView: RecyclerView
+    private lateinit var recordingsAdapter: RecordingsAdapter
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val recordingsViewModel =
-            ViewModelProvider(this).get(RecordingsViewModel::class.java)
-
         _binding = FragmentRecordingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textRecordings
-        recordingsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
+        recordingsRecyclerView = binding.recordingsRecyclerView
+        recordingsRecyclerView.addItemDecoration(DividerItemDecoration(requireContext(), LinearLayoutManager.VERTICAL))
+        recordingsAdapter = RecordingsAdapter()
+        recordingsRecyclerView.adapter = recordingsAdapter
+
+        recordingsViewModel.allRecordData.observe(viewLifecycleOwner,
+            Observer {
+                recordItems -> recordItems?.let {
+                    recordingsAdapter.submitList(it)
+                }
+            }
+        )
+
         return root
     }
 

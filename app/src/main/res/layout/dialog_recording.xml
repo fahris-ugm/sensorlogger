@@ -5,6 +5,14 @@
     android:orientation="vertical"
     android:padding="20dp">
 
+    <EditText
+        android:id="@+id/recordingTitleEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Recording Title"
+        android:inputType="text"
+        android:padding="8dp"
+        android:layout_marginBottom="16dp" />
     <TextView
         android:id="@+id/elapsedTimeTextView"
         android:layout_width="wrap_content"

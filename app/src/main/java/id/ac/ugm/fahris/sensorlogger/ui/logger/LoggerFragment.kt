@@ -17,6 +17,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -76,6 +77,7 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
     private lateinit var recordButton: Button
     // modal dialog while recording
     private var recordingDialog: AlertDialog? = null
+    private var recordingTitleEditText: EditText? = null
     // for displaying elapsed time while recording
     private var timer: CountDownTimer? = null
     private var elapsedTimeInSeconds = 0
@@ -173,6 +175,7 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_recording, null)
         val elapsedTimeTextView: TextView = dialogView.findViewById(R.id.elapsedTimeTextView)
         val stopRecordingButton: Button = dialogView.findViewById(R.id.stopRecordingButton)
+        recordingTitleEditText = dialogView.findViewById(R.id.recordingTitleEditText)
 
         // Create the dialog
         recordingDialog = AlertDialog.Builder(requireContext())
@@ -220,6 +223,7 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
         val thisFragment = this
         lifecycleScope.launch {
             // save initial record data to Room database and get recordId
+            Log.d("LoggerFragment", "startRecording insertRecordData: ${recordData.startTimestamp}")
             currentRecordId = appDatabase.recordDataDao().insertRecordData(recordData)
             currentRecordData?.recordId = currentRecordId
             accelerometer?.let { sensorManager.registerListener(thisFragment, it, SensorManager.SENSOR_DELAY_NORMAL) }
@@ -324,8 +328,10 @@ class LoggerFragment : Fragment(), SensorListAdapter.OnSensorClickListener, Sens
         fusedLocationClient.removeLocationUpdates(locationCallback)
         sensorManager.unregisterListener(this)
         lifecycleScope.launch {
+            currentRecordData?.title = recordingTitleEditText?.text.toString()
             // update end timestamp of record data
             currentRecordData?.endTimestamp = System.currentTimeMillis()
+            Log.d("LoggerFragment", "stopRecording updateRecordData: ${currentRecordData?.endTimestamp}")
             currentRecordData?.let { appDatabase.recordDataDao().updateRecordData(it) }
             Toast.makeText(requireContext(), "Recording stopped, data saved", Toast.LENGTH_SHORT).show()
         }

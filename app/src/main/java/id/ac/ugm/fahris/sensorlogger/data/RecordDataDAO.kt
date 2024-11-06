@@ -1,5 +1,6 @@
 package id.ac.ugm.fahris.sensorlogger.data
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -27,6 +28,9 @@ interface RecordDataDAO {
     @Transaction
     @Query("SELECT * FROM record_data")
     suspend fun getAllRecordData(): List<RecordData>
+
+    @Query("SELECT * FROM record_data")
+    fun getAllRecordDataLive(): LiveData<List<RecordData>>
 
     @Transaction
     @Query("SELECT * FROM record_data WHERE recordId = :recordId")

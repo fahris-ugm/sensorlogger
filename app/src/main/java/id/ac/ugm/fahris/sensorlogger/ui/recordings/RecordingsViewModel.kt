@@ -1,13 +1,17 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import id.ac.ugm.fahris.sensorlogger.data.AppDatabase
+import id.ac.ugm.fahris.sensorlogger.data.RecordData
 
-class RecordingsViewModel : ViewModel() {
+class RecordingsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val _text = MutableLiveData<String>().apply {
-        value = "This is dashboard Fragment"
+    private val recordDataDAO = AppDatabase.getDatabase(application).recordDataDao()
+    val allRecordData: LiveData<List<RecordData>>
+
+    init {
+        allRecordData = recordDataDAO.getAllRecordDataLive()
     }
-    val text: LiveData<String> = _text
 }

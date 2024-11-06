@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "record_data")
 data class RecordData(
     @PrimaryKey(autoGenerate = true) var recordId: Long = 0,
-    val title: String,
+    var title: String,
     val startTimestamp: Long,
     var endTimestamp: Long,
     val flagAccelerometer: Boolean = false,
