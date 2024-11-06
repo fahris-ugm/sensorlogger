@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import id.ac.ugm.fahris.sensorlogger.R
 import id.ac.ugm.fahris.sensorlogger.data.RecordData
+import id.ac.ugm.fahris.sensorlogger.utils.TimeUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -77,34 +78,10 @@ class RecordingsAdapter(
         fun bind(recording: RecordData) {
             Log.d("RecordingsAdapter", "Binding recording start: ${recording.startTimestamp} |end: ${recording.endTimestamp}")
             titleTextView.text = recording.title
-            timestampTextView.text = "Start: ${formatTimestamp(recording.startTimestamp)}"
-            durationTextView.text = "Duration: ${formatDuration(recording.endTimestamp - recording.startTimestamp)}"
+            timestampTextView.text = "Start: ${TimeUtils.formatTimestamp(recording.startTimestamp)}"
+            durationTextView.text = "Duration: ${TimeUtils.formatDuration(recording.endTimestamp - recording.startTimestamp)}"
         }
-        private fun formatTimestamp(timestamp: Long): String {
-            val date = Date(timestamp)
-            val format = SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault())
-            return format.format(date)
-        }
-        // Helper function to format the duration from milliseconds to HH:MM:SS
-        /*
-        private fun formatDuration(durationMillis: Long): String {
-            val seconds = (durationMillis / 1000) % 60
-            val minutes = (durationMillis / (1000 * 60)) % 60
-            val hours = (durationMillis / (1000 * 60 * 60)) % 24
-            return String.format("%02d:%02d:%02d", hours, minutes, seconds)
-        }*/
-        private fun formatDuration(durationMillis: Long): String {
-            val totalSeconds = durationMillis / 1000
-            val seconds = totalSeconds % 60
-            val minutes = (totalSeconds / 60) % 60
-            val hours = totalSeconds / 3600
 
-            return when {
-                hours > 0 -> "$hours hour ${minutes} minutes ${seconds} seconds"
-                minutes > 0 -> "$minutes minutes ${seconds} seconds"
-                else -> "$seconds seconds"
-            }
-        }
     }
     // DiffUtil class to optimize RecyclerView performance
     class RecordingDiffCallback : DiffUtil.ItemCallback<RecordData>() {

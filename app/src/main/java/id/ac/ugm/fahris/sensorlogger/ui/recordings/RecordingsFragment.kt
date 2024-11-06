@@ -1,6 +1,7 @@
 package id.ac.ugm.fahris.sensorlogger.ui.recordings
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.ActionMode
@@ -152,6 +153,9 @@ class RecordingsFragment : Fragment() {
     private fun openRecordDetailActivity(recordingId: Long) {
         //
         Log.d("RecordingsFragment", "Recording ID: $recordingId")
+        val intent = Intent(requireContext(), RecordDetailActivity::class.java)
+        intent.putExtra("RECORDING_ID", recordingId)
+        startActivity(intent)
     }
 
     override fun onDestroyView() {
