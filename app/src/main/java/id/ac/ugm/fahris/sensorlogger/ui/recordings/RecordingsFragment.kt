@@ -59,6 +59,13 @@ class RecordingsFragment : Fragment() {
         ) { recordItems ->
             recordItems?.let {
                 recordingsAdapter.submitList(it.reversed())
+                if (it.count() == 0) {
+                    binding.emptyView.visibility = View.VISIBLE
+                    binding.recordingsRecyclerView.visibility = View.GONE
+                } else {
+                    binding.emptyView.visibility = View.GONE
+                    binding.recordingsRecyclerView.visibility = View.VISIBLE
+                }
             }
         }
 
